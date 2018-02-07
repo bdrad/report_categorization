@@ -27,17 +27,3 @@ class SemanticMapper(TransformerMixin):
 
 DateTimeMapper = SemanticMapper([(r'[0-9][0-9]? [0-9][0-9]? [0-9][0-9][0-9][0-9]', 'DATE'),
                                  (r'[0-9][0-9]? [0-9][0-9] (am|pm)?', 'TIME')], regex=True)
-
-replacement_path = "data/processed/clever_replacements"
-replacements = read_replacements(replacement_path)
-print(replacements[0])
-
-data = pickle.load(open('src/preproc.txt', 'rb'))
-print(data[0])
-
-mapper = SemanticMapper(replacements)
-new_data = DateTimeMapper.transform(mapper.transform(data))
-
-print(new_data[4])
-print(new_data[5])
-print(new_data[6])
