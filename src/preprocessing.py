@@ -30,6 +30,7 @@ class SentenceTokenizer(TransformerMixin):
     def transform(self, texts, *_):
         result = []
         for text in texts:
+            text = text.replace("Dr.", "Dr")
             sentences = sent_tokenize(text)
             new_sentences = []
             for sentence in sentences:
