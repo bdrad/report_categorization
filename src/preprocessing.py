@@ -25,13 +25,23 @@ class ImpressionExtractor(TransformerMixin):
             result.append(b)
         return result
 
+
+punct = "!\"#$%&\'()*+,-./:;<=>?@[\]^_`{|}~\n"
 class SentenceTokenizer(TransformerMixin):
     def transform(self, texts, *_):
         result = []
         for text in texts:
             sentences = sent_tokenize(text)
-            sentences = [s.lower().replace("\n", " ").replace("?", " ") for s in sentences if len(s) > 2]
-            result.append(sentences)
+            new_sentences = []
+            for sentence in sentences:
+                if len(sentence) <= 2:
+                    continue
+                for r in punct:
+                    sentence = sentence.replace(r, " ")
+                sentence = sentence.replace("  ", " ")
+                sentence = sentence[:-1] if sentence[-1] == " " else sentence
+                new_sentences.append(sentence)
+            result.append(new_sentences)
         return result
 
 class ReportLabeler(TransformerMixin):
@@ -61,5 +71,4 @@ if __name__ == '__main__':
     data = get_reports_from_csv(args.in_path)
     pipeline = make_pipeline(ImpressionExtractor(), SentenceTokenizer(), ReportLabeler(), None)
     preprocessed = pipeline.transform(data)
-
     pickle.dump(preprocessed, open(args.out_path, "wb"))
