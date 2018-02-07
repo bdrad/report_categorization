@@ -1,4 +1,4 @@
-# Contains code for reading from CSVs, normalizing text, and semantically mapping text
+# Contains code for reading from CSVs, normalizing text, and labeling text
 import csv
 from random import shuffle
 from sklearn.base import TransformerMixin
@@ -47,19 +47,19 @@ class ReportLabeler(TransformerMixin):
                     clean_report.append(sentence)
             result.append((clean_report, label))
         return result
-path = "../Rnet_files/positive_examples.csv"
-a = list(get_reports_from_csv(path))
-shuffle(a)
-
-pipeline = make_pipeline(ImpressionExtractor(), SentenceTokenizer(), ReportLabeler(), None)
-data = pipeline.transform(a)
 
 
-print(data[0])
-print("///////////////")
-print(data[1])
-print("///////////////")
-print(data[2])
-print("///////////////")
-print(data[3])
-print("///////////////")
+
+import argparse
+import pickle
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Preprocess a corpus and output it to a file')
+    parser.add_argument('in_path')
+    parser.add_argument('out_path')
+    args = parser.parse_args()
+
+    data = get_reports_from_csv(args.in_path)
+    pipeline = make_pipeline(ImpressionExtractor(), SentenceTokenizer(), ReportLabeler(), None)
+    preprocessed = pipeline.transform(data)
+
+    pickle.dump(preprocessed, open(args.out_path, "wb"))
