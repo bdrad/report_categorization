@@ -31,7 +31,8 @@ class WordVectorizer(TransformerMixin):
                         wordvecs.append(self.model.wv[word])
                     except:
                         pass # print("OOV Word: " + word)
-                new_sentences.append(wordvecs)
+                if len(wordvecs) > 0:
+                    new_sentences.append(wordvecs)
             result.append((new_sentences, report[1]))
         return result
 
