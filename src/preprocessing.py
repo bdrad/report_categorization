@@ -16,16 +16,18 @@ def get_reports_from_csv(corpus_path):
             yield n['Report Text']
 
 class ImpressionExtractor(TransformerMixin):
+    def __init__(self, use_findings=False):
+        self.use_findings=use_findings
+
     def transform(self, reports, *_):
         result = []
         for report in reports:
             a = report.split("END OF IMPRESSION")[0]
             impression = a.split("IMPRESSION:")[-1]
-            findings = re.split("IMPRESSION:|FINDINGS:", a)
             impression = impression[1:] if len(impression) > 0 and impression[0] == "\n" else impression
             impression = impression[:-1] if len(impression) > 0 and impression[-1] == "\n" else impression
             b = impression
-            if "FINDINGS:" in a:
+            if self.use_findings and "FINDINGS:" in a:
                 preimpression = a.split("IMPRESSION:")[0]
                 findings = preimpression.split("FINDINGS:")[-1]
                 findings = findings[1:] if len(findings) > 0 and findings[0] == "\n" else findings
@@ -87,12 +89,13 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Preprocess a corpus and output it to a file')
     parser.add_argument('-i','--in_path', nargs='+', required=True)
     parser.add_argument('-o','--out_path', nargs=1, required=True)
+    parser.add_argument('-f','--use_findings', dest='use_findings', action='store_true')
 
     args = parser.parse_args()
 
     data = [get_reports_from_csv(ip) for ip in args.in_path]
     merged_data = list(itertools.chain.from_iterable(data))
-    pipeline = make_pipeline(ImpressionExtractor(), SentenceTokenizer(), ExtraneousSentenceRemover(), ReportLabeler(), None)
+    pipeline = make_pipeline(ImpressionExtractor(use_findings=args.use_findings), SentenceTokenizer(), ExtraneousSentenceRemover(), ReportLabeler(), None)
     preprocessed = pipeline.transform(merged_data)
     print("Writing " + str(len(preprocessed)) + " preprocessed reports")
     pickle.dump(preprocessed, open(args.out_path[0], "wb"))

@@ -1,5 +1,5 @@
 from gensim.models import Word2Vec
-
+from sklearn.base import TransformerMixin
 def train_word2vec(corpus_path, out_path):
     sentences = []
     print("Loading files...")
@@ -14,6 +14,26 @@ def train_word2vec(corpus_path, out_path):
 
     model.save(out_path)
 
+def load_word2vec_model(path):
+    return Word2Vec.load(path)
+
+class WordVectorizer(TransformerMixin):
+    def __init__(self, model):
+        self.model = model
+    def transform(self, labeled_reports, *_):
+        result = []
+        for report in labeled_reports:
+            new_sentences = []
+            for sentence in report[0]:
+                wordvecs = []
+                for word in sentence.split(" "):
+                    try:
+                        wordvecs.append(self.model.wv[word])
+                    except:
+                        pass # print("OOV Word: " + word)
+                new_sentences.append(wordvecs)
+            result.append((new_sentences, report[1]))
+        return result
 
 import argparse
 if __name__ == '__main__':
