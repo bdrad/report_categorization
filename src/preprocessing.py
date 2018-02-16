@@ -1,5 +1,6 @@
 # Contains code for reading from CSVs, normalizing text, and labeling text
 import csv
+import re
 from random import shuffle
 from sklearn.base import TransformerMixin
 from sklearn.pipeline import Pipeline, FeatureUnion, make_pipeline
@@ -19,9 +20,17 @@ class ImpressionExtractor(TransformerMixin):
         result = []
         for report in reports:
             a = report.split("END OF IMPRESSION")[0]
-            b = a.split("IMPRESSION:")[-1]
-            b = b[1:] if len(b) > 0 and b[0] == "\n" else b
-            b = b[:-1] if len(b) > 0 and b[-1] == "\n" else b
+            impression = a.split("IMPRESSION:")[-1]
+            findings = re.split("IMPRESSION:|FINDINGS:", a)
+            impression = impression[1:] if len(impression) > 0 and impression[0] == "\n" else impression
+            impression = impression[:-1] if len(impression) > 0 and impression[-1] == "\n" else impression
+            b = impression
+            if "FINDINGS:" in a:
+                preimpression = a.split("IMPRESSION:")[0]
+                findings = preimpression.split("FINDINGS:")[-1]
+                findings = findings[1:] if len(findings) > 0 and findings[0] == "\n" else findings
+                findings = findings[:-1] if len(findings) > 0 and findings[-1] == "\n" else findings
+                b = findings + "\n" + b
             result.append(b)
         return result
 

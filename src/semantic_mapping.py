@@ -7,7 +7,7 @@ def read_replacements(replacement_file_path):
     return pickle.load(open(replacement_file_path, 'rb'))
 
 def reports_to_corpus(reports, out_file):
-    for report in report:
+    for report in reports:
         for sentence in report[0]:
             out_file.write(sentence + "\n")
 
@@ -25,7 +25,8 @@ class SemanticMapper(TransformerMixin):
                     if self.regex:
                         sentence = re.sub(r[0], r[1], sentence)
                     else:
-                        sentence = sentence.replace(" " + r[0] + " ", " " + r[1] + " ")
+                        sentence = " " + sentence + " "
+                        sentence = sentence.replace(" " + r[0] + " ", " " + r[1] + " ")[1:-1]
                 new_sentences.append(sentence)
             result.append((new_sentences, report[1]))
         return result
