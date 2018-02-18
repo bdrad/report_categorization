@@ -7,10 +7,9 @@ class LabelSeparator(TransformerMixin):
         return ([l[0] for l in labeled_reports], [l[1] for l in labeled_reports])
 
 class ReportVectorAverager(TransformerMixin):
-    def __init__(self, normalize=True, shuffle=True, desired_dim=200):
+    def __init__(self, normalize=True, shuffle=True):
         self.normalize = normalize
         self.shuffle = shuffle
-        self.desired_dim = desired_dim
 
     def transform(self, labeled_reports, *_):
         errs = 0
@@ -25,7 +24,7 @@ class ReportVectorAverager(TransformerMixin):
                 report_vec = np.mean(sentence_vecs, axis=0)
                 if self.normalize:
                     report_vec = report_vec / np.linalg.norm(report_vec)
-                if report_vec.shape[0] == self.desired_dim:
+                if report_vec.shape[0] > 1:
                     report_vectors.append((report_vec, report[1]))
             except:
                 pass #print(sentence_vecs)

@@ -1,5 +1,7 @@
 from sklearn.base import TransformerMixin
 from sklearn.pipeline import Pipeline, FeatureUnion, make_pipeline
+from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize
 import pickle
 import re
 
@@ -10,6 +12,22 @@ def reports_to_corpus(reports, out_file):
     for report in reports:
         for sentence in report[0]:
             out_file.write(sentence + "\n")
+
+stop_words = set(stopwords.words('english'))
+extra_removal = set(["cm", "x"])
+to_remove = stop_words.union(extra_removal)
+class StopWordRemover(TransformerMixin):
+    def transform(self, labeled_reports, *_):
+        result = []
+        for report in labeled_reports:
+            new_sentences = []
+            for sentence in report[0]:
+                words = word_tokenize(sentence)
+                filtered_sentence = [w for w in words if (not w in to_remove) and (not w.isdigit())]
+                new_sentences.append(" ".join(filtered_sentence))
+            result.append((new_sentences, report[1]))
+        return result
+
 
 class SemanticMapper(TransformerMixin):
     def __init__(self, replacements, regex=False):
@@ -38,6 +56,7 @@ import argparse
 import pickle
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Preprocess a corpus and output it to a file')
+    parser.add_argument('-s','--stopword_removal', dest='stopword_removal', action='store_true')
     parser.add_argument('labeled_reports_in_path')
     parser.add_argument('replacement_file_path')
     parser.add_argument('corpus_out_path')
@@ -49,6 +68,9 @@ if __name__ == '__main__':
     ReplacementMapper = SemanticMapper(replacements)
     pipeline = make_pipeline(ReplacementMapper, DateTimeMapper, None)
     labeled_output = pipeline.transform(labeled_reports)
+
+    if args.stopword_removal:
+        labeled_output = StopWordRemover().transform(labeled_output)
 
     reports_to_corpus(labeled_output, open(args.corpus_out_path, "w"))
     pickle.dump(labeled_output, open(args.labels_out_path, "wb"))

@@ -1,5 +1,8 @@
 from gensim.models import Word2Vec
 from sklearn.base import TransformerMixin
+from random import shuffle
+import fastText as ft
+
 def train_word2vec(corpus_path, out_path):
     sentences = []
     print("Loading files...")
@@ -8,7 +11,7 @@ def train_word2vec(corpus_path, out_path):
             sentences.append(line.split(" "))
 
     print("Training model...")
-    model = Word2Vec(sentences, min_count=2, size=200, hs=0, negative=15, iter=15)
+    model = Word2Vec(sentences, min_count=2, size=150, hs=0, negative=15, iter=15)
     print("Trained!")
     print(model)
 
@@ -36,6 +39,25 @@ class WordVectorizer(TransformerMixin):
             result.append((new_sentences, report[1]))
         return result
 
+def load_fastText_model(path):
+    return ft.load_model(path)
+
+class FastTextReportVectorizer(TransformerMixin):
+    def __init__(self, model):
+        self.model = model
+    def transform(self, labeled_reports, *_):
+        shuffle(labeled_reports)
+        result = []
+        for report in labeled_reports:
+            report_text = " ".join(report[0])
+            out_vector = self.model.get_sentence_vector(report_text)
+            result.append((out_vector, report[1]))
+        return result
+
+def train_fastText(corpus_path, out_path):
+    model = ft.train_unsupervised(input=corpus_path, model='skipgram', epoch=12)
+    model.save_model(out_path)
+
 import argparse
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Preprocess a corpus and output it to a file')
@@ -47,5 +69,7 @@ if __name__ == '__main__':
 
     if args.model == "word2vec":
         train_word2vec(args.corpus_path[0], args.out_path[0])
+    elif args.model == 'fastText':
+        train_fastText(args.corpus_path[0], args.out_path[0])
     else:
         print("Unsupported model!")
