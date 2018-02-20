@@ -11,7 +11,7 @@ def train_word2vec(corpus_path, out_path):
             sentences.append(line.split(" "))
 
     print("Training model...")
-    model = Word2Vec(sentences, min_count=2, size=150, hs=0, negative=15, iter=15)
+    model = Word2Vec(sentences, min_count=2, size=250, window=8, hs=0, negative=15, iter=15)
     print("Trained!")
     print(model)
 
@@ -64,7 +64,7 @@ class FastTextReportVectorizer(TransformerMixin):
         return result
 
 def train_fastText(corpus_path, out_path):
-    model = ft.train_unsupervised(input=corpus_path, model='skipgram', epoch=12)
+    model = ft.train_unsupervised(input=corpus_path, model='skipgram', dim=250, epoch=15)
     model.save_model(out_path)
 
 import argparse

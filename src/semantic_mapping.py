@@ -14,6 +14,39 @@ def reports_to_corpus(reports, out_file):
         for sentence in report[0]:
             out_file.write(sentence + "\n")
 
+class NegexSmearer(TransformerMixin):
+    # TODO: add range option
+    def __init__(self, negex_range=3):
+        self.negex_range = negex_range
+    def transform(self, labeled_reports, *_):
+        result = []
+        if self.negex_range == 1:
+            for labeled_report in labeled_reports:
+                new_report = []
+                for sentence in labeled_report[0]:
+                    new_report.append(sentence.replace("NEGEX ", "NEGEX_"))
+                result.append((new_report, labeled_report[1]))
+        else:
+            for labeled_report in labeled_reports:
+                report = labeled_report[0]
+                new_sentences = []
+                for sentence in report:
+                    tokenized = sentence.split(" ")
+                    negex_indices = [i for i, t in enumerate(tokenized) if t == "NEGEX"]
+                    to_negate = []
+                    for offset in range(1, self.negex_range + 1):
+                        to_negate += [i + offset for i in negex_indices]
+                    to_negate = [tn for tn in to_negate if not tn in negex_indices]
+                    to_negate = [tn for tn in to_negate if tn < len(tokenized)]
+
+                    for i in to_negate:
+                        tokenized[i] = "NEGEX_" + tokenized[i]
+                    clean_tokenized = [t for i, t in enumerate(tokenized) if not i in negex_indices]
+                    new_sentences.append(" ".join(clean_tokenized))
+                result.append((new_sentences, labeled_report[1]))
+
+        return result
+
 class PhraseDetector(TransformerMixin):
     def transform(self, labeled_reports, *_):
         # Build bigram detector
@@ -91,6 +124,7 @@ if __name__ == '__main__':
         labeled_output = StopWordRemover().transform(labeled_output)
 
     labeled_output = PhraseDetector().transform(labeled_output)
+    labeled_output = NegexSmearer().transform(labeled_output)
 
     reports_to_corpus(labeled_output, open(args.corpus_out_path, "w"))
     pickle.dump(labeled_output, open(args.labels_out_path, "wb"))
