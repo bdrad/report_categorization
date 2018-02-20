@@ -43,15 +43,24 @@ def load_fastText_model(path):
     return ft.load_model(path)
 
 class FastTextReportVectorizer(TransformerMixin):
-    def __init__(self, model):
+    def __init__(self, model, granularity="report"):
+        if granularity not in ["report", "sentence"]:
+            print("Unknown granularity!")
+            raise ValueError
+        self.granularity = granularity
         self.model = model
     def transform(self, labeled_reports, *_):
         shuffle(labeled_reports)
         result = []
         for report in labeled_reports:
-            report_text = " ".join(report[0])
-            out_vector = self.model.get_sentence_vector(report_text)
-            result.append((out_vector, report[1]))
+            if self.granularity == "report":
+                report_text = " ".join(report[0])
+                out_vector = self.model.get_sentence_vector(report_text)
+                result.append((out_vector, report[1]))
+            elif self.granularity == "sentence":
+                sentence_vectors = [self.model.get_sentence_vector(s) for s in report[0]]
+                if len(sentence_vectors) > 0:
+                    result.append((sentence_vectors, report[1]))
         return result
 
 def train_fastText(corpus_path, out_path):

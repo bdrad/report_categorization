@@ -2,6 +2,7 @@ from sklearn.base import TransformerMixin
 from sklearn.pipeline import Pipeline, FeatureUnion, make_pipeline
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
+from gensim.models import Phrases
 import pickle
 import re
 
@@ -12,6 +13,23 @@ def reports_to_corpus(reports, out_file):
     for report in reports:
         for sentence in report[0]:
             out_file.write(sentence + "\n")
+
+class PhraseDetector(TransformerMixin):
+    def transform(self, labeled_reports, *_):
+        # Build bigram detector
+        sentences = []
+        for labeled_report in labeled_reports:
+            report = labeled_report[0]
+            sentences += [sent.split(" ") for sent in report]
+        bigram = Phrases(sentences)
+
+        # Replace bigrams
+        result = []
+        for labeled_report in labeled_reports:
+            report = labeled_report[0]
+            new_report = [" ".join(bigram[sentence.split(" ")]) for sentence in report]
+            result.append((new_report, labeled_report[1]))
+        return result
 
 stop_words = set(stopwords.words('english'))
 extra_removal = set(["cm", "x"])
@@ -71,6 +89,8 @@ if __name__ == '__main__':
 
     if args.stopword_removal:
         labeled_output = StopWordRemover().transform(labeled_output)
+
+    labeled_output = PhraseDetector().transform(labeled_output)
 
     reports_to_corpus(labeled_output, open(args.corpus_out_path, "w"))
     pickle.dump(labeled_output, open(args.labels_out_path, "wb"))
