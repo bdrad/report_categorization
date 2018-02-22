@@ -3,7 +3,7 @@ from sklearn.base import TransformerMixin
 from random import shuffle
 import fastText as ft
 
-def train_word2vec(corpus_path, out_path):
+def train_word2vec(corpus_path, out_path, cbow=False):
     sentences = []
     print("Loading files...")
     with open(corpus_path, 'r') as infile:
@@ -11,7 +11,10 @@ def train_word2vec(corpus_path, out_path):
             sentences.append(line.split(" "))
 
     print("Training model...")
-    model = Word2Vec(sentences, min_count=2, size=250, window=8, hs=0, negative=15, iter=15)
+    if cbow:
+        model = Word2Vec(sentences, min_count=2, size=350, window=8, hs=0, negative=15, iter=15, sg=0)
+    else:
+        model = Word2Vec(sentences, min_count=2, size=350, window=8, hs=0, negative=15, iter=15, sg=1)
     print("Trained!")
     print(model)
 
@@ -63,8 +66,11 @@ class FastTextReportVectorizer(TransformerMixin):
                     result.append((sentence_vectors, report[1]))
         return result
 
-def train_fastText(corpus_path, out_path):
-    model = ft.train_unsupervised(input=corpus_path, model='skipgram', dim=250, epoch=15)
+def train_fastText(corpus_path, out_path, cbow=False):
+    if cbow:
+        model = ft.train_unsupervised(input=corpus_path, model='cbow', dim=350, epoch=15)
+    else:
+        model = ft.train_unsupervised(input=corpus_path, model='skipgram', dim=350, epoch=15)
     model.save_model(out_path)
 
 import argparse
@@ -73,12 +79,13 @@ if __name__ == '__main__':
     parser.add_argument('-c','--corpus_path', nargs=1, required=True)
     parser.add_argument('-o','--out_path', nargs=1, required=True)
     parser.add_argument('-m','--model', nargs='?', default="word2vec", type=str)
+    parser.add_argument('-b','--cbow', dest='cbow', action='store_true')
 
     args = parser.parse_args()
 
     if args.model == "word2vec":
-        train_word2vec(args.corpus_path[0], args.out_path[0])
+        train_word2vec(args.corpus_path[0], args.out_path[0], cbow=args.cbow)
     elif args.model == 'fastText':
-        train_fastText(args.corpus_path[0], args.out_path[0])
+        train_fastText(args.corpus_path[0], args.out_path[0], cbow=args.cbow)
     else:
         print("Unsupported model!")

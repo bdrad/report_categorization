@@ -85,23 +85,39 @@ class SemanticMapper(TransformerMixin):
         self.replacements = replacements
         self.regex = regex
 
-    def transform(self, labeled_report, *_):
+    def transform_regex(self, labeled_report):
         result = []
         for report in labeled_report:
             new_sentences = []
             for sentence in report[0]:
                 for r in self.replacements:
-                    if self.regex:
-                        sentence = re.sub(r[0], r[1], sentence)
-                    else:
-                        sentence = " " + sentence + " "
-                        sentence = sentence.replace(" " + r[0] + " ", " " + r[1] + " ")[1:-1]
+                    sentence = re.sub(r[0], r[1], sentence)
                 new_sentences.append(sentence)
             result.append((new_sentences, report[1]))
         return result
 
-DateTimeMapper = SemanticMapper([(r'[0-9][0-9]? [0-9][0-9]? [0-9][0-9][0-9][0-9]', 'DATE'),
-                                 (r'[0-9][0-9]? [0-9][0-9] (am|pm)?', 'TIME')], regex=True)
+    def transform(self, labeled_report, *_):
+        if self.regex:
+            return self.transform_regex(labeled_report)
+
+        result = []
+        for report in labeled_report:
+            new_sentences = []
+            for sentence in report[0]:
+                sentence = " " + sentence + " "
+                for r in self.replacements:
+                    sentence = sentence.replace(r[0],r[1])
+                sentence = sentence.replace("  ", " ")
+                if len(sentence) > 1 and sentence[0] == " ":
+                    sentence = sentence[1:]
+                if len(sentence) > 1 and sentence[-1] == " ":
+                    sentence = sentence[:-1]
+                new_sentences.append(sentence)
+            result.append((new_sentences, report[1]))
+        return result
+
+DateTimeMapper = SemanticMapper([(r'[0-9][0-9]? [0-9][0-9]? [0-9][0-9][0-9][0-9]', ''),
+                                 (r'[0-9][0-9]? [0-9][0-9] (am|pm)?', '')], regex=True)
 
 import argparse
 import pickle
@@ -110,14 +126,20 @@ if __name__ == '__main__':
     parser.add_argument('-s','--stopword_removal', dest='stopword_removal', action='store_true')
     parser.add_argument('labeled_reports_in_path')
     parser.add_argument('replacement_file_path')
+    parser.add_argument('radlex_file_path')
     parser.add_argument('corpus_out_path')
     parser.add_argument('labels_out_path')
     args = parser.parse_args()
 
     labeled_reports = pickle.load(open(args.labeled_reports_in_path, "rb"))
+
     replacements = read_replacements(args.replacement_file_path)
+    radlex_replacements = read_replacements(args.radlex_file_path)
     ReplacementMapper = SemanticMapper(replacements)
+    # RadlexMapper = SemanticMapper(radlex_replacements)
+    # pipeline = make_pipeline(RadlexMapper, ReplacementMapper, DateTimeMapper, None)
     pipeline = make_pipeline(ReplacementMapper, DateTimeMapper, None)
+
     labeled_output = pipeline.transform(labeled_reports)
 
     if args.stopword_removal:
