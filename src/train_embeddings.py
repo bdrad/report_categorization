@@ -2,6 +2,9 @@ from gensim.models import Word2Vec
 from sklearn.base import TransformerMixin
 from random import shuffle
 import fastText as ft
+import numpy as np
+
+FAST_TEXT_DIM = 300
 
 def train_word2vec(corpus_path, out_path, cbow=False):
     sentences = []
@@ -45,13 +48,16 @@ class WordVectorizer(TransformerMixin):
 def load_fastText_model(path):
     return ft.load_model(path)
 
+
+padding = np.zeros((FAST_TEXT_DIM,))
 class FastTextReportVectorizer(TransformerMixin):
-    def __init__(self, model, granularity="report"):
-        if granularity not in ["report", "sentence"]:
+    def __init__(self, model, granularity="report", pad_len=-1):
+        if granularity not in ["report", "sentence", "word"]:
             print("Unknown granularity!")
             raise ValueError
         self.granularity = granularity
         self.model = model
+        self.pad_len=pad_len
     def transform(self, labeled_reports, *_):
         shuffle(labeled_reports)
         result = []
@@ -64,13 +70,24 @@ class FastTextReportVectorizer(TransformerMixin):
                 sentence_vectors = [self.model.get_sentence_vector(s) for s in report[0]]
                 if len(sentence_vectors) > 0:
                     result.append((sentence_vectors, report[1]))
+            elif self.granularity == "word":
+                vects = []
+                for sentence in report[0]:
+                    word_vecs = [self.model.get_word_vector(w) for w in sentence.split(" ")]
+                    vects += word_vecs
+                if self.pad_len > 0 and len(vects) > 0:
+                    if self.pad_len >= len(vects):
+                        paddings = (self.pad_len - len(vects)) * [padding]
+                        result.append((vects + paddings, report[1]))
+                elif len(vects) > 0:
+                    result.append((vects, report[1]))
         return result
 
 def train_fastText(corpus_path, out_path, cbow=False):
     if cbow:
-        model = ft.train_unsupervised(input=corpus_path, model='cbow', dim=350, epoch=15)
+        model = ft.train_unsupervised(input=corpus_path, model='cbow', dim=FAST_TEXT_DIM, epoch=24)
     else:
-        model = ft.train_unsupervised(input=corpus_path, model='skipgram', dim=350, epoch=15)
+        model = ft.train_unsupervised(input=corpus_path, model='skipgram', dim=FAST_TEXT_DIM, epoch=24)
     model.save_model(out_path)
 
 import argparse

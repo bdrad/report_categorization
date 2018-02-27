@@ -24,7 +24,7 @@ class NegexSmearer(TransformerMixin):
             for labeled_report in labeled_reports:
                 new_report = []
                 for sentence in labeled_report[0]:
-                    new_report.append(sentence.replace("NEGEX ", "NEGEX_"))
+                    new_report.append(sentence.replace("NEGEX ", "NEGEX_").replace("NEGEX_NEGEX_", "NEGEX_"))
                 result.append((new_report, labeled_report[1]))
         else:
             for labeled_report in labeled_reports:
@@ -42,7 +42,7 @@ class NegexSmearer(TransformerMixin):
                     for i in to_negate:
                         tokenized[i] = "NEGEX_" + tokenized[i]
                     clean_tokenized = [t for i, t in enumerate(tokenized) if not i in negex_indices]
-                    new_sentences.append(" ".join(clean_tokenized))
+                    new_sentences.append(" ".join(clean_tokenized).replace("NEGEX_NEGEX_", "NEGEX_"))
                 result.append((new_sentences, labeled_report[1]))
 
         return result

@@ -4,7 +4,11 @@ from functools import reduce
 import numpy as np
 
 class LabelSeparator(TransformerMixin):
+    def __init__(self, shuffle=True):
+        self.shuffle = shuffle
     def transform(self, labeled_reports, *_):
+        if self.shuffle:
+            shuffle(labeled_reports)
         return ([l[0] for l in labeled_reports], [l[1] for l in labeled_reports])
 
 # Assumes that each report contains a series of vectors, with each vector representing a single sentence
@@ -37,17 +41,15 @@ class SentenceBasedClassifier(TransformerMixin):
     # TODO: def predict(reports):
 
 class ReportVectorAverager(TransformerMixin):
-    def __init__(self, granularity="report", normalize=True, shuffle=True):
+    def __init__(self, granularity="report", normalize=True):
         if granularity not in ["report", "sentence"]:
             print("Unknown granularity!")
             raise ValueError
         self.normalize = normalize
-        self.shuffle = shuffle
         self.granularity = granularity
 
     def transform(self, labeled_reports, *_):
         errs = 0
-        shuffle(labeled_reports)
         report_vectors = []
         for report in labeled_reports:
             sentence_vecs = []

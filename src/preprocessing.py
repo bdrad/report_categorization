@@ -63,7 +63,7 @@ class ReportLabeler(TransformerMixin):
             clean_report = []
             label = 0
             for sentence in report:
-                if "discussed with" in sentence:
+                if "discussed with" in sentence or "recommendations communicated" in sentence:
                     label = 1
                 else:
                     clean_report.append(sentence)
