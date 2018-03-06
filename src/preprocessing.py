@@ -56,6 +56,8 @@ class SentenceTokenizer(TransformerMixin):
             result.append(new_sentences)
         return result
 
+
+indicator_phrases = ["discussed with", "recommendations communicated", "follow up is recommended"]
 class ReportLabeler(TransformerMixin):
     def transform(self, reports, *_):
         result = []
@@ -63,7 +65,7 @@ class ReportLabeler(TransformerMixin):
             clean_report = []
             label = 0
             for sentence in report:
-                if "discussed with" in sentence or "recommendations communicated" in sentence:
+                if True in [ip in sentence for ip in indicator_phrases]:
                     label = 1
                 else:
                     clean_report.append(sentence)

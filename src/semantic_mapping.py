@@ -54,7 +54,7 @@ class PhraseDetector(TransformerMixin):
         for labeled_report in labeled_reports:
             report = labeled_report[0]
             sentences += [sent.split(" ") for sent in report]
-        bigram = Phrases(sentences)
+        bigram = Phrases(sentences, scoring="npmi", threshold=0.3)
 
         # Replace bigrams
         result = []
@@ -65,7 +65,7 @@ class PhraseDetector(TransformerMixin):
         return result
 
 stop_words = set(stopwords.words('english'))
-extra_removal = set(["cm", "x"])
+extra_removal = set(["cm", "mm", "x", "please", "is", "are", "be", "been"])
 to_remove = stop_words.union(extra_removal)
 class StopWordRemover(TransformerMixin):
     def transform(self, labeled_reports, *_):
@@ -119,6 +119,8 @@ class SemanticMapper(TransformerMixin):
 DateTimeMapper = SemanticMapper([(r'[0-9][0-9]? [0-9][0-9]? [0-9][0-9][0-9][0-9]', ''),
                                  (r'[0-9][0-9]? [0-9][0-9] (am|pm)?', '')], regex=True)
 
+AlphaNumRemover = SemanticMapper([(r' [0-9]+','')], regex=True)
+
 import argparse
 import pickle
 if __name__ == '__main__':
@@ -138,7 +140,7 @@ if __name__ == '__main__':
     ReplacementMapper = SemanticMapper(replacements)
     # RadlexMapper = SemanticMapper(radlex_replacements)
     # pipeline = make_pipeline(RadlexMapper, ReplacementMapper, DateTimeMapper, None)
-    pipeline = make_pipeline(ReplacementMapper, DateTimeMapper, None)
+    pipeline = make_pipeline(ReplacementMapper, DateTimeMapper, AlphaNumRemover, None)
 
     labeled_output = pipeline.transform(labeled_reports)
 

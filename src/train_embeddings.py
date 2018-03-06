@@ -4,7 +4,7 @@ from random import shuffle
 import fastText as ft
 import numpy as np
 
-FAST_TEXT_DIM = 300
+FAST_TEXT_DIM = 250
 
 def train_word2vec(corpus_path, out_path, cbow=False):
     sentences = []
