@@ -54,7 +54,7 @@ class PhraseDetector(TransformerMixin):
         for labeled_report in labeled_reports:
             report = labeled_report[0]
             sentences += [sent.split(" ") for sent in report]
-        bigram = Phrases(sentences, scoring="npmi", threshold=0.3)
+        bigram = Phrases(sentences, scoring="npmi", threshold=0.4)
 
         # Replace bigrams
         result = []
@@ -139,7 +139,7 @@ if __name__ == '__main__':
     radlex_replacements = read_replacements(args.radlex_file_path)
     ReplacementMapper = SemanticMapper(replacements)
     # RadlexMapper = SemanticMapper(radlex_replacements)
-    # pipeline = make_pipeline(RadlexMapper, ReplacementMapper, DateTimeMapper, None)
+    # pipeline = make_pipeline(RadlexMapper, ReplacementMapper, DateTimeMapper, AlphaNumRemover, None)
     pipeline = make_pipeline(ReplacementMapper, DateTimeMapper, AlphaNumRemover, None)
 
     labeled_output = pipeline.transform(labeled_reports)
