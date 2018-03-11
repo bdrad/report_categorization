@@ -88,7 +88,14 @@ class SentenceTokenizer(TransformerMixin):
         return result
 
 
-indicator_phrases = ["discussed with", "recommendations communicated", "follow up is recommended"]
+indicator_phrases = ["discussed with ", "recommendations communicated", "reported by dr", "communicated with", "//impression", "results were called"]
+non_indicators = ["discussed with patient", "discussed with the patient", "//alert"]
+def sentence_indicates_discussion(sentence):
+    clean_sent = sentence
+    for nip in non_indicators:
+        clean_sent = clean_sent.replace(nip, "")
+    return True in [ip in clean_sent for ip in indicator_phrases]
+
 class ReportLabeler(TransformerMixin):
     def transform(self, reports, *_):
         result = []
@@ -97,13 +104,13 @@ class ReportLabeler(TransformerMixin):
             label = 0
 
             for sentence in report_obj["sentences"]:
-                if True in [ip in sentence for ip in indicator_phrases]:
+                if sentence_indicates_discussion(sentence):
                     label = 1
                 else:
                     clean_sections_sents.append(sentence)
 
             for sentence in report_obj["report_sentences"]:
-                if True in [ip in sentence for ip in indicator_phrases]:
+                if sentence_indicates_discussion(sentence):
                     label = 1
 
             result.append((clean_sections_sents, label))

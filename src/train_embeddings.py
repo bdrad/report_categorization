@@ -1,4 +1,5 @@
 from gensim.models import Word2Vec
+from sklearn.preprocessing import OneHotEncoder
 from sklearn.base import TransformerMixin
 from random import shuffle
 import fastText as ft
@@ -48,6 +49,40 @@ class WordVectorizer(TransformerMixin):
 def load_fastText_model(path):
     return ft.load_model(path)
 
+class OneHotVectorizer(TransformerMixin):
+    def __init__(self, model, granularity="word", pad_len=-1):
+        if granularity not in ["word"]:
+            print("Unknown granularity!")
+            raise ValueError
+        self.granularity = granularity
+        self.model = model
+        self.pad_len=pad_len
+    def transform(self, labeled_reports, *_):
+        # Get unique words from report
+        words = set()
+        for sentences in [r[0] for r in labeled_reports]:
+            for s in sentences:
+                sent_words = sentences.split(" ")
+                for sw in sent_words:
+                    words.add(sw)
+        index_map = {w : i for i, w in enumerate(words)}
+        encoder = OneHotEncoder(n_values=len(index_map))
+
+        shuffle(labeled_reports)
+        result = []
+        for report in labeled_reports:
+            if self.granularity == "word":
+                vects = []
+                for sentence in report[0]:
+                    word_vecs = [index_map[w] for w in sentence.split(" ")]
+                    vects += word_vecs
+                if self.pad_len > 0 and len(vects) > 0:
+                    if self.pad_len >= len(vects):
+                        paddings = (self.pad_len - len(vects)) * [padding]
+                        result.append((vects + paddings, report[1]))
+                elif len(vects) > 0:
+                    result.append((vects, report[1]))
+        return result
 
 padding = np.zeros((FAST_TEXT_DIM,))
 class FastTextReportVectorizer(TransformerMixin):
@@ -83,11 +118,11 @@ class FastTextReportVectorizer(TransformerMixin):
                     result.append((vects, report[1]))
         return result
 
-def train_fastText(corpus_path, out_path, cbow=False):
+def train_fastText(corpus_path, out_path, cbow=False, dim=FAST_TEXT_DIM):
     if cbow:
-        model = ft.train_unsupervised(input=corpus_path, model='cbow', dim=FAST_TEXT_DIM, epoch=24)
+        model = ft.train_unsupervised(input=corpus_path, model='cbow', dim=dim, epoch=24)
     else:
-        model = ft.train_unsupervised(input=corpus_path, model='skipgram', dim=FAST_TEXT_DIM, epoch=24)
+        model = ft.train_unsupervised(input=corpus_path, model='skipgram', dim=dim, epoch=24)
     model.save_model(out_path)
 
 import argparse
@@ -97,12 +132,13 @@ if __name__ == '__main__':
     parser.add_argument('-o','--out_path', nargs=1, required=True)
     parser.add_argument('-m','--model', nargs='?', default="word2vec", type=str)
     parser.add_argument('-b','--cbow', dest='cbow', action='store_true')
+    parser.add_argument('-d','--dim', required=False)
 
     args = parser.parse_args()
 
     if args.model == "word2vec":
         train_word2vec(args.corpus_path[0], args.out_path[0], cbow=args.cbow)
     elif args.model == 'fastText':
-        train_fastText(args.corpus_path[0], args.out_path[0], cbow=args.cbow)
+        train_fastText(args.corpus_path[0], args.out_path[0], cbow=args.cbow, dim=int(args.dim))
     else:
         print("Unsupported model!")
