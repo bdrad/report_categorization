@@ -1,11 +1,11 @@
 from gensim.models import Word2Vec
-from sklearn.preprocessing import OneHotEncoder
+from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.base import TransformerMixin
 from random import shuffle
 import fastText as ft
 import numpy as np
 
-FAST_TEXT_DIM = 200
+FAST_TEXT_DIM = 350
 
 def train_word2vec(corpus_path, out_path, cbow=False):
     sentences = []
@@ -49,40 +49,15 @@ class WordVectorizer(TransformerMixin):
 def load_fastText_model(path):
     return ft.load_model(path)
 
-class OneHotVectorizer(TransformerMixin):
-    def __init__(self, model, granularity="word", pad_len=-1):
-        if granularity not in ["word"]:
-            print("Unknown granularity!")
-            raise ValueError
-        self.granularity = granularity
-        self.model = model
-        self.pad_len=pad_len
+class TfidfReportVectorizer(TransformerMixin):
     def transform(self, labeled_reports, *_):
-        # Get unique words from report
-        words = set()
-        for sentences in [r[0] for r in labeled_reports]:
-            for s in sentences:
-                sent_words = sentences.split(" ")
-                for sw in sent_words:
-                    words.add(sw)
-        index_map = {w : i for i, w in enumerate(words)}
-        encoder = OneHotEncoder(n_values=len(index_map))
-
         shuffle(labeled_reports)
-        result = []
-        for report in labeled_reports:
-            if self.granularity == "word":
-                vects = []
-                for sentence in report[0]:
-                    word_vecs = [index_map[w] for w in sentence.split(" ")]
-                    vects += word_vecs
-                if self.pad_len > 0 and len(vects) > 0:
-                    if self.pad_len >= len(vects):
-                        paddings = (self.pad_len - len(vects)) * [padding]
-                        result.append((vects + paddings, report[1]))
-                elif len(vects) > 0:
-                    result.append((vects, report[1]))
-        return result
+
+        # Create TF-IDF Vectorizer
+        documents = [" ".join(lr[0]) for lr in labeled_reports]
+        vectorizer = TfidfVectorizer()
+        transformed_docs = vectorizer.fit_transform(documents)
+        return [(transformed_docs[i].toarray()[0], labeled_reports[i][1]) for i in range(len(labeled_reports))]
 
 padding = np.zeros((FAST_TEXT_DIM,))
 class FastTextReportVectorizer(TransformerMixin):
@@ -120,9 +95,9 @@ class FastTextReportVectorizer(TransformerMixin):
 
 def train_fastText(corpus_path, out_path, cbow=False, dim=FAST_TEXT_DIM):
     if cbow:
-        model = ft.train_unsupervised(input=corpus_path, model='cbow', dim=dim, epoch=24)
+        model = ft.train_unsupervised(input=corpus_path, model='cbow', dim=dim, epoch=24, wordNgrams=3)
     else:
-        model = ft.train_unsupervised(input=corpus_path, model='skipgram', dim=dim, epoch=24)
+        model = ft.train_unsupervised(input=corpus_path, model='skipgram', dim=dim, epoch=24, wordNgrams=3)
     model.save_model(out_path)
 
 import argparse

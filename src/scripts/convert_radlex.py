@@ -33,18 +33,24 @@ if __name__ == '__main__':
     to_replace = non_parents.union(second_level).union(third_level)
 
     replacements = []
-    for rid in to_replace:
-        try:
-            child_name = entity_names[rid]
-            if len(child_name.split(" ")) < 4 and is_descendent_of(rid, RID13176, parent_map):
-                parent_rid = parent_map[rid]
-                try:
-                    parent_name = entity_names[parent_rid]
-                    replacements.append((" " + child_name.lower() + " ", " " + parent_name.lower().replace(" ", "_") + " "))
-                except:
-                    print("Couldn't find parent " + parent_rid)
-        except:
-            print("Couldn't find " + rid)
+    ignore_vals = "()äößü1234567890"
+    for name in entity_names.values():
+        contains_char = True in [iv in name for iv in ignore_vals]
+        if " " in name and len(name.split(" ")) < 4 and not contains_char:
+            replacements.append((" " + name.lower() + " ", " " + name.lower().replace(" ", "_") + " "))
+        #try:
+        #    child_name = entity_names[rid]
+        #    if len(child_name.split(" ")) < 3:
+        #        parent_rid = parent_map[rid]
+        #        try:
+        #            parent_name = entity_names[parent_rid]
+        #            # replacements.append((" " + child_name.lower() + " ", " " + parent_name.lower().replace(" ", "_") + " "))
+        #            if " " in parent_name:
+        #                replacements.append((" " + parent_name.lower() + " ", " " + parent_name.lower().replace(" ", "_") + " "))
+        #        except:
+        #            print("Couldn't find parent " + parent_rid)
+        #except:
+        #    print("Couldn't find " + rid)
 
     print(replacements)
     print("Writing " + str(len(replacements)) + " RadLex replacements")

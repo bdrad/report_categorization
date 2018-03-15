@@ -54,7 +54,7 @@ class PhraseDetector(TransformerMixin):
         for labeled_report in labeled_reports:
             report = labeled_report[0]
             sentences += [sent.split(" ") for sent in report]
-        bigram = Phrases(sentences, scoring="npmi", threshold=0.4)
+        bigram = Phrases(sentences, scoring="npmi", threshold=0.45)
 
         # Replace bigrams
         result = []
@@ -147,7 +147,7 @@ if __name__ == '__main__':
     if args.stopword_removal:
         labeled_output = StopWordRemover().transform(labeled_output)
 
-    labeled_output = PhraseDetector().transform(labeled_output)
+    # labeled_output = PhraseDetector().transform(labeled_output)
     labeled_output = NegexSmearer().transform(labeled_output)
 
     reports_to_corpus(labeled_output, open(args.corpus_out_path, "w"))
