@@ -16,6 +16,7 @@ def get_reports_from_csv(corpus_path):
                 return
             yield n['Report Text']
 
+drop_indicators = ["is a non-reportable study", "consent form", "informed consent"]
 class SectionExtractor(TransformerMixin):
     def __init__(self, sections=["impression"]):
         self.extractors =[]
@@ -29,7 +30,7 @@ class SectionExtractor(TransformerMixin):
     def transform(self, reports, *_):
         result = []
         for report in reports:
-            if "This is a non-reportable study" in report:
+            if True in [di in report for di in drop_indicators]:
                 continue
             sections = " ".join([extractor(report) for extractor in self.extractors])
             report_obj = {"report_text" : report, "sections" : sections}
@@ -88,7 +89,7 @@ class SentenceTokenizer(TransformerMixin):
         return result
 
 
-indicator_phrases = ["discussed with ", "recommendations communicated", "reported by dr", "communicated with", "//impression", "results were called"]
+indicator_phrases = ["discussed with", "recommendations communicated", "reported by dr", "communicated with", "//impression", "results were called"]
 non_indicators = ["discussed with patient", "discussed with the patient", "//alert"]
 def sentence_indicates_discussion(sentence):
     clean_sent = sentence
