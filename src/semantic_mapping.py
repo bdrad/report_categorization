@@ -127,7 +127,7 @@ DateTimeMapper = SemanticMapper([(r'[0-9][0-9]? [0-9][0-9]? [0-9][0-9][0-9][0-9]
                                  (r'[0-9][0-9]? [0-9][0-9] (am|pm)?', '')], regex=True)
 
 AlphaNumRemover = SemanticMapper([(r' [0-9]+','')], regex=True)
-MiscReplacements = SemanticMapper([('intracranial hemorrhage', 'intracranial_hemorrhage')])
+MiscReplacements = SemanticMapper([(' intracranial hemorrhage ', ' intracranial_hemorrhage '), (' acute ', ' acute_')])
 
 ExtenderPreserver = SemanticMapper([(' or ', ' EXT '), (' nor ', ' EXT ')])
 ExtenderRemover = SemanticMapper([('EXT', ''), ('NEGEX_EXT', ''), (('NEGEX_ ', ''))])
