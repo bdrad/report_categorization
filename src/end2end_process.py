@@ -1,5 +1,5 @@
 from preprocessing import SectionExtractor, SentenceTokenizer, ExtraneousSentenceRemover, ReportLabeler
-from semantic_mapping import DateTimeMapper, AlphaNumRemover, SemanticMapper, StopWordRemover, NegexSmearer
+from semantic_mapping import DateTimeMapper, SemanticMapper, StopWordRemover, NegexSmearer, ExtenderPreserver, ExtenderRemover, MiscReplacements
 from sklearn.base import TransformerMixin
 from sklearn.pipeline import Pipeline, make_pipeline
 import pickle
@@ -14,15 +14,15 @@ class EndToEndProcessor(TransformerMixin):
         if radlex is None:
             self.pipeline = make_pipeline(SectionExtractor(sections=sections),
                 SentenceTokenizer(), ExtraneousSentenceRemover(), ReportLabeler(),
-                ReplacementMapper, DateTimeMapper, AlphaNumRemover, StopWordRemover(),
-                NegexSmearer(), None)
+                ExtenderPreserver, ReplacementMapper, DateTimeMapper,
+                StopWordRemover(), NegexSmearer(), ExtenderRemover, None)
         else:
             radlex_replacements = read_replacements(radlex)
             RadlexMapper = SemanticMapper(radlex_replacements)
             self.pipeline = make_pipeline(SectionExtractor(sections=sections),
                 SentenceTokenizer(), ExtraneousSentenceRemover(), ReportLabeler(),
-                RadlexMapper, ReplacementMapper, DateTimeMapper, AlphaNumRemover,
-                StopWordRemover(), NegexSmearer(), None)
+                ExtenderPreserver, ReplacementMapper, MiscReplacements, RadlexMapper, DateTimeMapper,
+                StopWordRemover(), NegexSmearer(), ExtenderRemover, None)
 
     def transform(self, reports, *_):
         return self.pipeline.transform(reports)

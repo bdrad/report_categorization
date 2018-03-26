@@ -15,8 +15,7 @@ def reports_to_corpus(reports, out_file):
             out_file.write(sentence + "\n")
 
 class NegexSmearer(TransformerMixin):
-    # TODO: add range option
-    def __init__(self, negex_range=3):
+    def __init__(self, negex_range=5):
         self.negex_range = negex_range
     def transform(self, labeled_reports, *_):
         result = []
@@ -37,7 +36,15 @@ class NegexSmearer(TransformerMixin):
                     for offset in range(1, self.negex_range + 1):
                         to_negate += [i + offset for i in negex_indices]
                     to_negate = [tn for tn in to_negate if not tn in negex_indices]
-                    to_negate = [tn for tn in to_negate if tn < len(tokenized)]
+                    to_negate = [tn for tn in to_negate if tn < len(tokenized) and tn >= 0]
+
+                    EXT_indices = []
+                    for i in to_negate:
+                        if tokenized[i] == "EXT":
+                            EXT_indices.append(i)
+                            to_negate = to_negate + [r + i for r in range(1, self.negex_range + 1)]
+                    to_negate = [tn for tn in to_negate if not (tn in negex_indices or tn in EXT_indices)]
+                    to_negate = [tn for tn in to_negate if tn < len(tokenized) and tn >= 0]
 
                     for i in to_negate:
                         tokenized[i] = "NEGEX_" + tokenized[i]
@@ -120,6 +127,10 @@ DateTimeMapper = SemanticMapper([(r'[0-9][0-9]? [0-9][0-9]? [0-9][0-9][0-9][0-9]
                                  (r'[0-9][0-9]? [0-9][0-9] (am|pm)?', '')], regex=True)
 
 AlphaNumRemover = SemanticMapper([(r' [0-9]+','')], regex=True)
+MiscReplacements = SemanticMapper([('intracranial hemorrhage', 'intracranial_hemorrhage')])
+
+ExtenderPreserver = SemanticMapper([(' or ', ' EXT '), (' nor ', ' EXT ')])
+ExtenderRemover = SemanticMapper([('EXT', ''), ('NEGEX_EXT', ''), (('NEGEX_ ', ''))])
 
 import argparse
 import pickle
@@ -139,8 +150,8 @@ if __name__ == '__main__':
     radlex_replacements = read_replacements(args.radlex_file_path)
     ReplacementMapper = SemanticMapper(replacements)
     RadlexMapper = SemanticMapper(radlex_replacements)
-    pipeline = make_pipeline(RadlexMapper, ReplacementMapper, DateTimeMapper, AlphaNumRemover, None)
-    # pipeline = make_pipeline(ReplacementMapper, DateTimeMapper, AlphaNumRemover, None)
+    pipeline = make_pipeline(ExtenderPreserver, ReplacementMapper, MiscReplacements, RadlexMapper, DateTimeMapper, None)
+    # pipeline = make_pipeline(ReplacementMapper, DateTimeMapper, None)
 
     labeled_output = pipeline.transform(labeled_reports)
 
@@ -148,7 +159,7 @@ if __name__ == '__main__':
         labeled_output = StopWordRemover().transform(labeled_output)
 
     # labeled_output = PhraseDetector().transform(labeled_output)
-    labeled_output = NegexSmearer().transform(labeled_output)
+    labeled_output = ExtenderRemover.transform(NegexSmearer().transform(labeled_output))
 
     reports_to_corpus(labeled_output, open(args.corpus_out_path, "w"))
     pickle.dump(labeled_output, open(args.labels_out_path, "wb"))

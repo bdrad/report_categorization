@@ -7,6 +7,15 @@ from sklearn.pipeline import Pipeline, FeatureUnion, make_pipeline
 from nltk.tokenize import sent_tokenize
 from section_extractors import extract_impression, extract_clinical_history, extract_findings
 
+def get_reports_from_zsfg_csv(corpus_path):
+    with open(corpus_path) as csvfile:
+        reader = csv.DictReader(csvfile)
+        while True:
+            n = next(reader, None)
+            if n is None:
+                return
+            yield "IMPRESSION: " + n['Impression'].lower() + "\nEND OF IMPRESSION".replace("attending report","").replace("wet read findings have been reviewed by the attending radiologists","").replace("i agree with the above report", "").replace("with the following revisions","")
+
 def get_reports_from_csv(corpus_path):
     with open(corpus_path) as csvfile:
         reader = csv.DictReader(csvfile)
@@ -46,7 +55,7 @@ class SentenceTokenizer(TransformerMixin):
             # Tokenize sections
             text = report_obj["sections"]
             text = text.replace("Dr.", "Dr")
-            text = re.sub('[0-9]+\.[0-9]+', "", text)
+            text = re.sub('[0-9]\. ', "", text)
             text = text.replace("r/o", "rule out")
             text = text.replace("R/O", "rule out")
 
@@ -67,7 +76,7 @@ class SentenceTokenizer(TransformerMixin):
             # Tokenize full text
             text = report_obj["report_text"]
             text = text.replace("Dr.", "Dr")
-            text = re.sub('[0-9]+\.[0-9]+', "", text)
+            text = re.sub('[0-9]\. ', "", text)
             text = text.replace("r/o", "rule out")
             text = text.replace("R/O", "rule out")
 
@@ -89,7 +98,9 @@ class SentenceTokenizer(TransformerMixin):
         return result
 
 
-indicator_phrases = ["discussed with", "recommendations communicated", "reported by dr", "communicated with", "//impression", "results were called"]
+indicator_phrases = ["discussed with", "recommendations communicated", "reported by dr",
+                        "communicated with", "//impression", "results were called",
+                        "communicated to", "communicated by", "called by"]
 non_indicators = ["discussed with patient", "discussed with the patient", "//alert"]
 def sentence_indicates_discussion(sentence):
     clean_sent = sentence
@@ -141,8 +152,8 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    data = [get_reports_from_csv(ip) for ip in args.in_path]
-    merged_data = list(itertools.chain.from_iterable(data))
+    data = [get_reports_from_csv(ip) if not "zsfg" in ip else get_reports_from_zsfg_csv(ip) for ip in args.in_path]
+    merged_data = list(set(list(itertools.chain.from_iterable(data))))
     pipeline = make_pipeline(SectionExtractor(sections=args.sections), SentenceTokenizer(), ExtraneousSentenceRemover(), ReportLabeler(), None)
     preprocessed = pipeline.transform(merged_data)
     print("Writing " + str(len(preprocessed)) + " preprocessed reports")
