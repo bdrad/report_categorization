@@ -158,7 +158,8 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     data = [get_reports_from_csv(ip) if not "zsfg" in ip else get_reports_from_zsfg_csv(ip) for ip in args.in_path]
-    merged_data = list(set(list(itertools.chain.from_iterable(data))))
+    # merged_data = list(set(list(itertools.chain.from_iterable(data))))
+    merged_data = list(itertools.chain.from_iterable(data))
 
     corrections = [read_correction_file(cp) for cp in args.corrections_path] if args.corrections_path is not None else []
     corrections_merged = list(set(itertools.chain.from_iterable(corrections)))

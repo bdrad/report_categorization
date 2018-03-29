@@ -3,6 +3,10 @@ import csv
 import pickle
 import re
 from unidecode import unidecode
+from nltk.corpus import stopwords
+
+
+stop_words = set(stopwords.words('english'))
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Preprocess a corpus and output it to a file')
@@ -25,12 +29,13 @@ if __name__ == '__main__':
         name = e["term"]
         to_ret = " " + name.lower().replace(" ", "_") + " "
         if name.count(" ") < 5:
-            replacements.append((" " + name.lower() + " ", to_ret))
-            for synonym in e["syns"]:
-                if synonym.replace(" ", "") != "" and synonym.count(" ") < 5:
-                    contains_char = True in [iv in synonym for iv in ignore_vals]
-                    if not contains_char:
-                        replacements.append((" " + synonym.lower() + " ", to_ret))
+            if name.lower() not in stop_words:
+                replacements.append((" " + name.lower() + " ", to_ret))
+                for synonym in e["syns"]:
+                    if synonym.replace(" ", "") != "" and synonym.count(" ") < 5:
+                        contains_char = True in [iv in synonym for iv in ignore_vals]
+                        if (not contains_char) and (synonym.lower() not in stop_words):
+                            replacements.append((" " + synonym.lower() + " ", to_ret))
 
 
     to_replaces = [r[0].lstrip().rstrip() for r in replacements]

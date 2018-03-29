@@ -3,8 +3,14 @@ import os
 import pickle
 from random import shuffle
 
+HARD_NEG_DEFAULT = ["NEGEX_acute NEGEX_intracranial NEGEX_hemorrhage NEGEX_hernia NEGEX_hydrocephalus",
+                    "NEGEX_acute NEGEX_abnormality NEGEX_abdomen",
+                    "NEGEX_acute NEGEX_abnormality NEGEX_abdomen NEGEX_pelvis",
+                    "NEGEX_acute NEGEX_findings NEGEX_abdomen",
+                    "normal abdomen"]
+
 class ClassificationModel():
-    def __init__(self, path=None, hard_neg_phrases=[]):
+    def __init__(self, path=None, hard_neg_phrases=HARD_NEG_DEFAULT):
         if path is not None:
             self.model = fastText.load_model(os.path.join(path, "ft.bin"))
             self.hard_neg_phrases = pickle.load(open(os.path.join(path, "neg.bin"), 'rb'))
@@ -46,7 +52,7 @@ class ClassificationModel():
 
     def save_model(self, path):
         # Some real hacky stuff, please look away
-        os.makedir(path)
+        os.mkdir(path)
         self.model.save_model(os.path.join(path, "ft.bin"))
         pickle.dump(self.hard_neg_phrases, open(os.path.join(path, "neg.bin"), 'wb'))
 

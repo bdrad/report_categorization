@@ -149,7 +149,7 @@ if __name__ == '__main__':
     radlex_replacements = read_replacements(args.radlex_file_path)
     ReplacementMapper = SemanticMapper(replacements)
     RadlexMapper = SemanticMapper(radlex_replacements)
-    pipeline = make_pipeline(ExtenderPreserver, ReplacementMapper, RadlexMapper, DateTimeMapper, None)
+    pipeline = make_pipeline(DateTimeMapper, ExtenderPreserver, ReplacementMapper, RadlexMapper, None)
     # pipeline = make_pipeline(ReplacementMapper, DateTimeMapper, None)
 
     labeled_output = pipeline.transform(labeled_reports)

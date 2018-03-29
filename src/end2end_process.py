@@ -14,14 +14,14 @@ class EndToEndProcessor(TransformerMixin):
         if radlex is None:
             self.pipeline = make_pipeline(SectionExtractor(sections=sections),
                 SentenceTokenizer(), ExtraneousSentenceRemover(), ReportLabeler(),
-                ExtenderPreserver, ReplacementMapper, DateTimeMapper,
+                DateTimeMapper, ExtenderPreserver, ReplacementMapper,
                 StopWordRemover(), NegexSmearer(), ExtenderRemover, None)
         else:
             radlex_replacements = read_replacements(radlex)
             RadlexMapper = SemanticMapper(radlex_replacements)
             self.pipeline = make_pipeline(SectionExtractor(sections=sections),
                 SentenceTokenizer(), ExtraneousSentenceRemover(), ReportLabeler(),
-                ExtenderPreserver, ReplacementMapper, RadlexMapper, DateTimeMapper,
+                DateTimeMapper, ExtenderPreserver, ReplacementMapper, RadlexMapper,
                 StopWordRemover(), NegexSmearer(), ExtenderRemover, None)
 
     def transform(self, reports, *_):
