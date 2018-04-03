@@ -51,7 +51,6 @@ class ClassificationModel():
         return conf
 
     def save_model(self, path):
-        # Some real hacky stuff, please look away
         os.mkdir(path)
         self.model.save_model(os.path.join(path, "ft.bin"))
         pickle.dump(self.hard_neg_phrases, open(os.path.join(path, "neg.bin"), 'wb'))
