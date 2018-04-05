@@ -132,6 +132,8 @@ class ReportLabeler(TransformerMixin):
             result.append((clean_sections_sents, label))
         return result
 
+
+ext_sentence_matches = ["dictated by", "electronically signed by", "my electronic signature on this "]
 class ExtraneousSentenceRemover(TransformerMixin):
     def transform(self, reports, *_):
         result = []
