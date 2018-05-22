@@ -1,1 +1,8 @@
 data/*
+*.sh
+*.bin
+*.csv
+.ipynb_checkpoints
+__pycache__
+helper_libs
+.DS_Store
