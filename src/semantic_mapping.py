@@ -16,8 +16,9 @@ def reports_to_corpus(reports, out_file):
             out_file.write(sentence + "\n")
 
 class NegexSmearer(TransformerMixin):
-    def __init__(self, negex_range=5):
+    def __init__(self, negex_range=5, remove=True):
         self.negex_range = negex_range
+        self.remove = remove
     def transform(self, labeled_reports, *_):
         result = []
         if self.negex_range == 1:
@@ -25,6 +26,8 @@ class NegexSmearer(TransformerMixin):
                 new_report = []
                 for sentence in labeled_report[0]:
                     new_report.append(sentence.replace("NEGEX ", "NEGEX_").replace("NEGEX_NEGEX_", "NEGEX_"))
+                    if self.remove:
+                        new_report = " ".join(filter(lambda t: "NEGEX_" not in t, new_report.split(" ")))
                 result.append((new_report, labeled_report[1]))
         else:
             for labeled_report in labeled_reports:
@@ -49,7 +52,10 @@ class NegexSmearer(TransformerMixin):
 
                     for i in to_negate:
                         tokenized[i] = "NEGEX_" + tokenized[i]
+                    if self.remove:
+                        tokenized = filter(lambda t: "NEGEX_" not in t, tokenized)
                     clean_tokenized = [t for i, t in enumerate(tokenized) if not i in negex_indices]
+
                     new_sentences.append(" ".join(clean_tokenized).replace("NEGEX_NEGEX_", "NEGEX_"))
                 result.append((new_sentences, labeled_report[1]))
 
@@ -151,5 +157,4 @@ if __name__ == '__main__':
 
     labeled_output = pipeline.transform(labeled_reports)
 
-    reports_to_corpus(labeled_output, open(args.corpus_out_path, "w"))
     pickle.dump(labeled_output, open(args.labels_out_path, "wb"))

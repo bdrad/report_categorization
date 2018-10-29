@@ -42,9 +42,13 @@ if __name__ == '__main__':
     dupes = set([r for r in to_replaces if to_replaces.count(r) > 1 and r != ""])
     replacements = [r for r in replacements if r[0] not in dupes]
     replacements = replacements + [(" " + d.lower() + " ", " " + d.lower().replace(" ", "_") + " ") for d in dupes]
-    print(replacements[:200])
-    print(replacements[-200:])
-    print(str(len(dupes)) + " duplicates")
+
+    rep_dict = dict(replacements)
+    for r in replacements:
+        if r[1] in rep_dict.keys():
+            rep_dict[r[0]] = rep_dict[r[1]]
+    replacements = list(rep_dict.items())
+
     print("Writing " + str(len(replacements)) + " RadLex replacements")
     with open(args.out_path, 'wb') as out_file:
         pickle.dump(replacements, out_file)
