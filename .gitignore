@@ -6,3 +6,4 @@ data/*
 __pycache__
 helper_libs
 .DS_Store
+word_embedding/fastText
